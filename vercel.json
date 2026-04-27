@@ -1,7 +1,7 @@
 {
   "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm --filter @workspace/kogniv run build",
-  "outputDirectory": "artifacts/kogniv/dist/public",
+  "outputDirectory": "artifacts/kogniv/dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
