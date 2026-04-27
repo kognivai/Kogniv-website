@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "ZMR_ORaU2IUDet5nGqUU2"
+uri = "file://kogniv-vercel.zip"
+type = "unspecified"
+title = "Kogniv — Vercel Deploy Package"
+
+[[outputs]]
+id = "pSyJL86R30rLOooRO9M8i"
+uri = "file://kogniv-github.zip"
+type = "unspecified"
+title = "Kogniv — GitHub Source Code"
