@@ -37,7 +37,7 @@ export function AnimatedLogo() {
       </div>
 
       <div className="kogniv-wordmark">
-        KOGNI<span>V</span>
+        Kogniv
       </div>
       <div className="kogniv-tagline">www.kogniv.com</div>
     </div>

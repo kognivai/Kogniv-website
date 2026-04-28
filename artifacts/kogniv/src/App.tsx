@@ -145,15 +145,34 @@ function WatchThisSpace() {
         padding: "0 4.2vw",
         height: "clamp(48px, 6.8vh, 72px)",
         display: "flex", alignItems: "center",
+        gap: "12px",
       }}>
+        {/* K tile */}
+        <div style={{
+          width: "clamp(32px, 2.8vw, 40px)",
+          height: "clamp(32px, 2.8vw, 40px)",
+          backgroundColor: "#3B82F6",
+          borderRadius: "clamp(5px, 0.5vw, 7px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0,
+        }}>
+          <span style={{
+            fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
+            fontWeight: "700",
+            fontSize: "clamp(14px, 1.3vw, 18px)",
+            color: "#FFFFFF",
+            lineHeight: 1,
+          }}>K</span>
+        </div>
+        {/* Wordmark */}
         <span style={{
           fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
           fontWeight: "700",
-          fontSize: "clamp(16px, 1.8vw, 22px)",
-          letterSpacing: "0.08em",
+          fontSize: "clamp(15px, 1.4vw, 20px)",
           color: "#FFFFFF",
+          letterSpacing: "0.02em",
         }}>
-          KOGNIV
+          Kogniv
         </span>
       </div>
 
