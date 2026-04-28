@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -8,6 +9,105 @@ const fade = (delay = 0) => ({
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay },
 });
+
+const TARGET = new Date("2026-05-01T00:00:00");
+
+function getTimeLeft() {
+  const diff = TARGET.getTime() - Date.now();
+  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  return {
+    days: Math.floor(diff / 86_400_000),
+    hours: Math.floor((diff % 86_400_000) / 3_600_000),
+    minutes: Math.floor((diff % 3_600_000) / 60_000),
+    seconds: Math.floor((diff % 60_000) / 1_000),
+  };
+}
+
+function CountdownUnit({ value, label }: { value: number; label: string }) {
+  const display = String(value).padStart(2, "0");
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+      <div
+        style={{
+          fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
+          fontWeight: "700",
+          fontSize: "clamp(28px, 4vw, 60px)",
+          lineHeight: 1,
+          color: "#FFFFFF",
+          backgroundColor: "#1E2235",
+          border: "1px solid #2D3350",
+          borderRadius: "12px",
+          padding: "clamp(10px, 1.5vh, 18px) clamp(14px, 2vw, 28px)",
+          minWidth: "clamp(64px, 8vw, 110px)",
+          textAlign: "center",
+          letterSpacing: "0.04em",
+        }}
+      >
+        {display}
+      </div>
+      <span
+        style={{
+          fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
+          fontSize: "clamp(9px, 0.9vw, 12px)",
+          fontWeight: "600",
+          color: "#6B7280",
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function Countdown() {
+  const [time, setTime] = useState(getTimeLeft);
+
+  useEffect(() => {
+    const id = setInterval(() => setTime(getTimeLeft()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <motion.div
+      {...fade(0.38)}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "clamp(10px, 2vw, 24px)",
+        marginBottom: "clamp(28px, 4.5vh, 56px)",
+      }}
+    >
+      <CountdownUnit value={time.days} label="Days" />
+      <Separator />
+      <CountdownUnit value={time.hours} label="Hours" />
+      <Separator />
+      <CountdownUnit value={time.minutes} label="Minutes" />
+      <Separator />
+      <CountdownUnit value={time.seconds} label="Seconds" />
+    </motion.div>
+  );
+}
+
+function Separator() {
+  return (
+    <span
+      style={{
+        fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
+        fontWeight: "700",
+        fontSize: "clamp(24px, 3.5vw, 52px)",
+        color: "#3B82F6",
+        lineHeight: 1,
+        alignSelf: "center",
+        marginBottom: "clamp(18px, 2.5vh, 28px)",
+        userSelect: "none",
+      }}
+    >
+      :
+    </span>
+  );
+}
 
 function WatchThisSpace() {
   return (
@@ -61,7 +161,6 @@ function WatchThisSpace() {
           alignItems: "center",
         }}
       >
-        {/* Kogniv wordmark */}
         <span
           style={{
             fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
@@ -88,7 +187,7 @@ function WatchThisSpace() {
         }}
       >
         {/* Badge */}
-        <motion.div {...fade(0.1)} style={{ display: "flex", alignItems: "center", marginBottom: "clamp(24px, 4vh, 48px)" }}>
+        <motion.div {...fade(0.1)} style={{ display: "flex", alignItems: "center", marginBottom: "clamp(20px, 3.5vh, 40px)" }}>
           <div
             style={{
               display: "inline-flex",
@@ -128,10 +227,10 @@ function WatchThisSpace() {
           style={{
             fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
             fontWeight: "700",
-            fontSize: "clamp(52px, 9vw, 128px)",
+            fontSize: "clamp(40px, 7.5vw, 110px)",
             lineHeight: 1.05,
             margin: 0,
-            marginBottom: "clamp(4px, 1vh, 12px)",
+            marginBottom: "clamp(2px, 0.5vh, 8px)",
             color: "#FFFFFF",
           }}
         >
@@ -143,23 +242,26 @@ function WatchThisSpace() {
           style={{
             fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
             fontWeight: "700",
-            fontSize: "clamp(56px, 9.5vw, 136px)",
+            fontSize: "clamp(44px, 8vw, 118px)",
             lineHeight: 1.05,
             margin: 0,
-            marginBottom: "clamp(32px, 5vh, 64px)",
+            marginBottom: "clamp(24px, 4vh, 48px)",
             color: "#3B82F6",
           }}
         >
           Space.
         </motion.h1>
 
+        {/* Countdown */}
+        <Countdown />
+
         {/* Body text */}
-        <motion.div {...fade(0.45)}>
+        <motion.div {...fade(0.55)}>
           <p
             style={{
               fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
               fontWeight: "700",
-              fontSize: "clamp(14px, 1.6vw, 22px)",
+              fontSize: "clamp(13px, 1.4vw, 20px)",
               lineHeight: 1.8,
               margin: 0,
               color: "#FFFFFF",
@@ -171,7 +273,7 @@ function WatchThisSpace() {
             style={{
               fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
               fontWeight: "700",
-              fontSize: "clamp(14px, 1.6vw, 22px)",
+              fontSize: "clamp(13px, 1.4vw, 20px)",
               lineHeight: 1.8,
               margin: 0,
             }}
