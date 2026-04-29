@@ -11,7 +11,7 @@ const fade = (delay = 0) => ({
   transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay },
 });
 
-const TARGET = new Date("2026-05-01T00:00:00");
+const TARGET = new Date("2026-05-02T00:00:00");
 
 function getTimeLeft() {
   const diff = TARGET.getTime() - Date.now();
