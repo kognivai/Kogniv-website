@@ -52,7 +52,7 @@ function WatchThisSpace() {
         <img
           src={`${import.meta.env.BASE_URL}kogniv-logo-transparent.png`}
           alt="Kogniv"
-          style={{ height: "clamp(32px, 3.2vw, 44px)", width: "auto" }}
+          style={{ height: "clamp(44px, 4.5vw, 64px)", width: "auto" }}
         />
       </div>
 
