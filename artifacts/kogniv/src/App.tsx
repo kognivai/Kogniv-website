@@ -45,14 +45,14 @@ function WatchThisSpace() {
         position: "relative", zIndex: 10,
         borderBottom: "1px solid #2D3350",
         padding: "0 4.2vw",
-        height: "clamp(48px, 6.8vh, 72px)",
+        height: "clamp(64px, 8vh, 96px)",
         display: "flex", alignItems: "center",
         gap: "12px",
       }}>
         <img
           src={`${import.meta.env.BASE_URL}kogniv-logo-transparent.png`}
           alt="Kogniv"
-          style={{ height: "clamp(44px, 4.5vw, 64px)", width: "auto" }}
+          style={{ height: "clamp(52px, 5.5vw, 76px)", width: "auto" }}
         />
       </div>
 
