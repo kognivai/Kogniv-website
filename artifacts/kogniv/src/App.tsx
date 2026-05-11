@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { AnimatedLogo } from "@/components/animated-logo";
 
 const queryClient = new QueryClient();
 
@@ -50,33 +49,11 @@ function WatchThisSpace() {
         display: "flex", alignItems: "center",
         gap: "12px",
       }}>
-        {/* K tile */}
-        <div style={{
-          width: "clamp(32px, 2.8vw, 40px)",
-          height: "clamp(32px, 2.8vw, 40px)",
-          backgroundColor: "#3B82F6",
-          borderRadius: "clamp(5px, 0.5vw, 7px)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>
-          <span style={{
-            fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
-            fontWeight: "700",
-            fontSize: "clamp(14px, 1.3vw, 18px)",
-            color: "#FFFFFF",
-            lineHeight: 1,
-          }}>K</span>
-        </div>
-        {/* Wordmark */}
-        <span style={{
-          fontFamily: "'Calibri', 'Helvetica Neue', Arial, sans-serif",
-          fontWeight: "700",
-          fontSize: "clamp(15px, 1.4vw, 20px)",
-          color: "#FFFFFF",
-          letterSpacing: "0.02em",
-        }}>
-          Kogniv
-        </span>
+        <img
+          src={`${import.meta.env.BASE_URL}kogniv-logo-transparent.png`}
+          alt="Kogniv"
+          style={{ height: "clamp(32px, 3.2vw, 44px)", width: "auto" }}
+        />
       </div>
 
       {/* Body: two columns on desktop */}
@@ -145,11 +122,11 @@ function WatchThisSpace() {
           </motion.div>
         </div>
 
-        {/* Right column — animated logo (hidden on small screens) */}
+        {/* Right column — logo (hidden on small screens) */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+          initial={{ opacity: 0, scale: 0.88, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
           style={{
             display: "flex",
             alignItems: "center",
@@ -158,7 +135,13 @@ function WatchThisSpace() {
           }}
           className="logo-col"
         >
-          <AnimatedLogo />
+          <motion.img
+            src={`${import.meta.env.BASE_URL}kogniv-logo-transparent.png`}
+            alt="Kogniv"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 4, ease: "easeInOut", repeat: Infinity }}
+            style={{ width: "clamp(260px, 28vw, 420px)", height: "auto" }}
+          />
         </motion.div>
 
       </div>
