@@ -27,7 +27,7 @@ export default function Hero() {
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.08] tracking-tight mb-4">
           Reimagining Your Workflows<br />for the AI Era
         </h1>
-        <p className="text-white text-sm md:text-base font-semibold tracking-[0.18em] uppercase mb-6">
+        <p className="text-white text-base md:text-lg lg:text-xl font-semibold tracking-[0.18em] uppercase italic mb-6">
           First AI Consulting Platform for ServiceNow
         </p>
 
