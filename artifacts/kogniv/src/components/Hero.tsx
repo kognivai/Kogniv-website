@@ -24,9 +24,12 @@ export default function Hero() {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center px-6 text-center max-w-[1000px] mx-auto">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.08] tracking-tight mb-6">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.08] tracking-tight mb-4">
           Reimagining Your Workflows<br />for the AI Era
         </h1>
+        <p className="text-[#22D3EE] text-sm md:text-base font-semibold tracking-[0.18em] uppercase mb-6">
+          First AI Consulting Platform for ServiceNow
+        </p>
 
         <p className="text-[#8BA4C8] text-lg md:text-xl max-w-2xl leading-relaxed mb-10">
           Kogniv creates 'Future of Work' for Organizations, deploying autonomous AI that operates under strict human-defined guardrails. Kogniv embeds with your team to deliver measurable, 'AI-Native Operations'.
