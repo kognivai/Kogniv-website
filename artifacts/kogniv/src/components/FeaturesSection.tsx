@@ -37,12 +37,12 @@ export default function FeaturesSection() {
 
               {/* Text */}
               <div className={i % 2 === 1 ? "lg:order-1" : ""}>
-                <span className="inline-block border border-[#2E4878] text-[#8BA4C8] text-xs font-medium px-3 py-1.5 rounded-full mb-5">{f.tag}</span>
+                <span className="inline-block border border-[#2E4878] text-[#86EFAC] text-xs font-medium px-3 py-1.5 rounded-full mb-5">{f.tag}</span>
                 <h3 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-4">{f.title}</h3>
-                <p className="text-[#8BA4C8] text-base leading-relaxed mb-6">{f.body}</p>
+                <p className="text-[#86EFAC] text-base leading-relaxed mb-6">{f.body}</p>
                 <ul className="flex flex-col gap-2.5">
                   {f.bullets.map(b => (
-                    <li key={b} className="flex items-center gap-3 text-[#8BA4C8] text-sm">
+                    <li key={b} className="flex items-center gap-3 text-[#86EFAC] text-sm">
                       <span className="w-5 h-5 rounded-full bg-[#131F35] border border-[#1E3055] flex items-center justify-center flex-shrink-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#6366F1]" />
                       </span>

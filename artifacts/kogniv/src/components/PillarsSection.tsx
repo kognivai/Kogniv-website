@@ -58,7 +58,7 @@ export default function PillarsSection() {
           <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight max-w-xl mb-3">
             We power enterprises across four transformation pillars.
           </h2>
-          <p className="text-[#8BA4C8] text-lg max-w-lg">Built on ServiceNow, with Anthropic and OpenAI at the model layer.</p>
+          <p className="text-[#86EFAC] text-lg max-w-lg">Built on ServiceNow, with Anthropic and OpenAI at the model layer.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -71,7 +71,7 @@ export default function PillarsSection() {
                 <span className="text-[#6366F1] text-xs font-semibold uppercase tracking-wide">{p.label}</span>
                 <h3 className="text-white font-semibold text-base mt-1 leading-snug">{p.headline}</h3>
               </div>
-              <p className="text-[#8BA4C8] text-sm leading-relaxed flex-1">{p.body}</p>
+              <p className="text-[#86EFAC] text-sm leading-relaxed flex-1">{p.body}</p>
               <ul className="flex flex-col gap-1.5">
                 {p.features.map(f => (
                   <li key={f} className="flex items-center gap-2 text-[#4A6E90] text-xs">

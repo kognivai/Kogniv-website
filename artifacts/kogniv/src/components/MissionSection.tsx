@@ -20,15 +20,15 @@ export default function MissionSection() {
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-6">
               The next-generation AI consulting company.
             </h2>
-            <p className="text-[#8BA4C8] text-base leading-relaxed mb-5">
+            <p className="text-[#86EFAC] text-base leading-relaxed mb-5">
               Enterprises today are stuck. The tools are improving fast — but most organisations don't know how to apply them where it matters. Legacy workflows stay intact. Value stays locked.
             </p>
-            <p className="text-[#8BA4C8] text-base leading-relaxed mb-5">
+            <p className="text-[#86EFAC] text-base leading-relaxed mb-5">
               Kogniv was built to close that gap. We combine deep domain expertise with forward-deployed engineering to help enterprises actually transform — not just plan it.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               {["ServiceNow Certified", "Anthropic Partner", "OpenAI Partner", "HCLS", "BFSI"].map(tag => (
-                <span key={tag} className="border border-[#1E3055] text-[#8BA4C8] text-xs font-medium px-3 py-1.5 rounded-full">
+                <span key={tag} className="border border-[#1E3055] text-[#86EFAC] text-xs font-medium px-3 py-1.5 rounded-full">
                   {tag}
                 </span>
               ))}

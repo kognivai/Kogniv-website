@@ -32,7 +32,7 @@ function App() {
           <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-2">
             The Kogniv Platform.
           </h2>
-          <p className="text-[#8BA4C8] text-lg max-w-lg mb-0">
+          <p className="text-[#86EFAC] text-lg max-w-lg mb-0">
             Four phases that take you from insight to enterprise transformation.
           </p>
         </div>

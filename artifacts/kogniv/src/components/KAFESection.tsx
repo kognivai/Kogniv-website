@@ -65,7 +65,7 @@ export default function KAFESection() {
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-4">
               Kogniv Agentic AI<br />Factory for Enterprises.
             </h2>
-            <p className="text-[#8BA4C8] text-base leading-relaxed mb-4">
+            <p className="text-[#86EFAC] text-base leading-relaxed mb-4">
               KAFE is Kogniv's proprietary framework for building, deploying, and continuously improving AI agents on the ServiceNow platform.
             </p>
             <p className="text-[#4A6E90] text-base leading-relaxed">

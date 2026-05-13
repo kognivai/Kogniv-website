@@ -69,7 +69,7 @@ export default function ContactSection() {
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-5">
               We'll walk you through the factory model in 30 minutes.
             </h2>
-            <p className="text-[#8BA4C8] text-base leading-relaxed mb-8 max-w-sm">
+            <p className="text-[#86EFAC] text-base leading-relaxed mb-8 max-w-sm">
               Tell us about your business and the workflows you want to transform. We'll follow up within one business day with a live demo tailored to your operations.
             </p>
             <div className="flex flex-col gap-3 text-[#4A6E90] text-sm">
@@ -95,7 +95,7 @@ export default function ContactSection() {
               </div>
               <div>
                 <h3 className="text-white font-bold text-xl mb-2">We're on it.</h3>
-                <p className="text-[#8BA4C8] text-sm max-w-xs leading-relaxed">
+                <p className="text-[#86EFAC] text-sm max-w-xs leading-relaxed">
                   Thanks for reaching out. You'll also receive a confirmation email. We'll be in touch within one business day.
                 </p>
               </div>
@@ -110,7 +110,7 @@ export default function ContactSection() {
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[#8BA4C8] text-xs tracking-wider uppercase">First Name</label>
+                  <label className="text-[#86EFAC] text-xs tracking-wider uppercase">First Name</label>
                   <input
                     type="text"
                     placeholder="Jane"
@@ -121,7 +121,7 @@ export default function ContactSection() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[#8BA4C8] text-xs tracking-wider uppercase">Last Name</label>
+                  <label className="text-[#86EFAC] text-xs tracking-wider uppercase">Last Name</label>
                   <input
                     type="text"
                     placeholder="Smith"
@@ -134,7 +134,7 @@ export default function ContactSection() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[#8BA4C8] text-xs tracking-wider uppercase">Work Email</label>
+                <label className="text-[#86EFAC] text-xs tracking-wider uppercase">Work Email</label>
                 <input
                   type="email"
                   placeholder="jane@company.com"
@@ -146,7 +146,7 @@ export default function ContactSection() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[#8BA4C8] text-xs tracking-wider uppercase">Organisation</label>
+                <label className="text-[#86EFAC] text-xs tracking-wider uppercase">Organisation</label>
                 <input
                   type="text"
                   placeholder="Company name"
@@ -158,7 +158,7 @@ export default function ContactSection() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[#8BA4C8] text-xs tracking-wider uppercase">
+                <label className="text-[#86EFAC] text-xs tracking-wider uppercase">
                   Describe the workflows you want to automate
                 </label>
                 <textarea

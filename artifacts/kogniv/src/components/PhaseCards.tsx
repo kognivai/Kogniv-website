@@ -64,7 +64,7 @@ export default function PhaseCards() {
 
               <div className="flex flex-col gap-2 mt-auto">
                 <h3 className="text-white font-semibold text-base leading-snug">{phase.title}</h3>
-                <p className="text-[#8BA4C8] text-sm leading-relaxed">{phase.blurb}</p>
+                <p className="text-[#86EFAC] text-sm leading-relaxed">{phase.blurb}</p>
                 <a
                   href={`#${phase.id}-detail`}
                   className="text-[#6366F1] text-sm font-medium hover:underline mt-1 inline-flex items-center gap-1"

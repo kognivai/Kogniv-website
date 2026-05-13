@@ -57,7 +57,7 @@ export default function AdvantagesSection() {
                 <div className="text-2xl flex-shrink-0 mt-0.5" style={{ color: a.color }}>{a.icon}</div>
                 <div>
                   <h3 className="text-white font-semibold text-base mb-2">{a.title}</h3>
-                  <p className="text-[#8BA4C8] text-sm leading-relaxed">{a.body}</p>
+                  <p className="text-[#86EFAC] text-sm leading-relaxed">{a.body}</p>
                 </div>
               </div>
             ))}
@@ -93,7 +93,7 @@ export default function AdvantagesSection() {
                 {priorRoles.map(role => (
                   <div key={role} className="flex items-center gap-2.5">
                     <span className="w-1 h-1 rounded-full bg-[#4A6E90] flex-shrink-0" />
-                    <span className="text-[#8BA4C8] text-sm">{role}</span>
+                    <span className="text-[#86EFAC] text-sm">{role}</span>
                   </div>
                 ))}
               </div>
