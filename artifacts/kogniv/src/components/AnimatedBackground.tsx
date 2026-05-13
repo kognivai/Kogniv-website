@@ -1,46 +1,37 @@
 import { useEffect, useRef } from "react";
 
-type RGB = [number, number, number];
-
-/* ── colour helpers ──────────────────────────────────────────── */
-function hslToRgb(h: number, s: number, l: number): RGB {
-  h = ((h % 360) + 360) % 360;
-  s /= 100; l /= 100;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-  };
-  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
-}
-const rgba = ([r, g, b]: RGB, a: number) => `rgba(${r},${g},${b},${a.toFixed(3)})`;
+/* ─── palette ──────────────────────────────────────────────── */
+const COLORS = [
+  [99,  102, 241] as const,  // indigo  #6366F1
+  [34,  211, 238] as const,  // cyan    #22D3EE
+  [168,  85, 247] as const,  // purple  #A855F7
+];
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
+const rgba = ([r, g, b]: readonly [number, number, number], a: number) =>
+  `rgba(${r},${g},${b},${a.toFixed(3)})`;
 
-/* ── interfaces ──────────────────────────────────────────────── */
-interface DataLine {
-  x1: number; y1: number; x2: number; y2: number;
-  progress: number; speed: number;
-  baseHue: number; hueRange: number;
-  tailLength: number; width: number; opacity: number;
-}
-
-interface Particle {
+/* ─── types ────────────────────────────────────────────────── */
+interface Node {
   x: number; y: number; vx: number; vy: number;
-  radius: number; baseHue: number;
-  opacity: number; pulse: number;
+  r: number; color: readonly [number, number, number];
+  glow: number;        // 0-1, decays after activation
+  ring: number;        // expanding ring radius, 0 = none
+  ringAlpha: number;
+}
+interface Packet {
+  from: number; to: number;
+  progress: number; speed: number;
+  color: readonly [number, number, number];
 }
 
-/* base hues spread across indigo → purple → cyan band */
-const BASE_HUES = [235, 255, 270, 190, 245, 280, 200];
-const pickHue   = () => BASE_HUES[Math.floor(Math.random() * BASE_HUES.length)];
+/* ─── constants ─────────────────────────────────────────────── */
+const MAX_DIST  = 190;
+const CONN_FREQ = 40;   // frames between connection refresh
 
 export default function AnimatedBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rafRef    = useRef<number>(0);
-  const tick      = useRef(0);
-  const particles = useRef<Particle[]>([]);
-  const lines     = useRef<DataLine[]>([]);
-  const WH        = useRef({ W: 0, H: 0 });
+  const raf       = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -48,174 +39,176 @@ export default function AnimatedBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    /* ── helpers ─────────────────────────────────────────── */
-    const makeLine = (): DataLine => {
-      const { W, H } = WH.current;
-      const side = Math.floor(Math.random() * 4);
-      let x1: number, y1: number, x2: number, y2: number;
-      if      (side === 0) { x1 = -20;    y1 = rand(0,H); x2 = W+20; y2 = y1+rand(-H*.35,H*.35); }
-      else if (side === 1) { x1 = W+20;   y1 = rand(0,H); x2 = -20;  y2 = y1+rand(-H*.35,H*.35); }
-      else if (side === 2) { x1 = rand(0,W); y1 = -20;    x2 = x1+rand(-W*.35,W*.35); y2 = H+20; }
-      else                  { x1 = rand(0,W); y1 = H+20;  x2 = x1+rand(-W*.35,W*.35); y2 = -20; }
-      return {
-        x1: x1!, y1: y1!, x2: x2!, y2: y2!,
-        progress: Math.random(),
-        speed:    rand(0.0008, 0.0025),
-        baseHue:  pickHue(),
-        hueRange: rand(-30, 30),
-        tailLength: rand(0.12, 0.28),
-        width:    rand(0.6, 1.8),
-        opacity:  rand(0.45, 0.85),
-      };
-    };
+    let W = 0, H = 0, tick = 0;
+    let nodes:   Node[]   = [];
+    let packets: Packet[] = [];
+    let conns:   number[][] = [];   // conns[i] = list of j indices node i connects to
 
+    /* ── initialise nodes ─────────────────────────────────── */
     const init = () => {
-      const { W, H } = WH.current;
-      particles.current = Array.from({ length: 45 }, () => ({
+      const count = Math.min(70, Math.max(30, Math.floor(W * H / 14000)));
+      nodes = Array.from({ length: count }, () => ({
         x: rand(0, W), y: rand(0, H),
-        vx: rand(-0.35, 0.35), vy: rand(-0.35, 0.35),
-        radius: rand(1, 2.5),
-        baseHue: pickHue(),
-        opacity: rand(0.4, 0.85),
-        pulse: rand(0, Math.PI * 2),
+        vx: rand(-0.12, 0.12), vy: rand(-0.12, 0.12),
+        r: rand(1.8, 3.2),
+        color: pick(COLORS),
+        glow: 0, ring: 0, ringAlpha: 0,
       }));
-      lines.current   = Array.from({ length: 22 }, makeLine);
+      packets = [];
+      buildConns();
     };
 
-    const resize = () => {
-      WH.current.W = canvas.width  = canvas.offsetWidth;
-      WH.current.H = canvas.height = canvas.offsetHeight;
-      init();
+    /* ── build adjacency from proximity ───────────────────── */
+    const buildConns = () => {
+      conns = nodes.map((a, i) =>
+        nodes.reduce<number[]>((acc, b, j) => {
+          if (j === i) return acc;
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < MAX_DIST) acc.push(j);
+          return acc;
+        }, [])
+      );
     };
 
-    /* ── draw layers ─────────────────────────────────────── */
-    const drawAuroras = (W: number, H: number, shift: number) => {
-      const t = tick.current;
-      [
-        { ox:0.28, oy:0.32, ox2:0.10, oy2:0.08, ft:0.14, ft2:0.11, rr:0.52, ra:0.60, bh: 240, o:0.14 },
-        { ox:0.72, oy:0.58, ox2:0.08, oy2:0.07, ft:0.09, ft2:0.13, rr:0.44, ra:0.55, bh: 270, o:0.10 },
-        { ox:0.50, oy:0.18, ox2:0.11, oy2:0.06, ft:0.07, ft2:0.10, rr:0.38, ra:0.50, bh: 190, o:0.07 },
-      ].forEach(a => {
-        const cx = W * (a.ox + a.ox2 * Math.sin(t * a.ft));
-        const cy = H * (a.oy + a.oy2 * Math.cos(t * a.ft2));
-        const rx = Math.min(W, H) * a.rr;
-        const ry = rx * a.ra;
-        const c  = hslToRgb(a.bh + shift, 85, 68);
-        const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
-        gr.addColorStop(0,   rgba(c, a.o));
-        gr.addColorStop(0.5, rgba(c, a.o * 0.35));
-        gr.addColorStop(1,   rgba(c, 0));
-        ctx.save();
-        ctx.translate(cx, cy); ctx.scale(1, ry / rx); ctx.translate(-cx, -cy);
-        ctx.beginPath(); ctx.arc(cx, cy, rx, 0, Math.PI * 2);
-        ctx.fillStyle = gr; ctx.fill();
-        ctx.restore();
+    /* ── spawn a travelling packet ────────────────────────── */
+    const spawnPacket = () => {
+      if (packets.length >= 28) return;
+      const fi = Math.floor(Math.random() * nodes.length);
+      const nb = conns[fi];
+      if (!nb || nb.length === 0) return;
+      packets.push({
+        from: fi,
+        to:   nb[Math.floor(Math.random() * nb.length)],
+        progress: 0,
+        speed: rand(0.003, 0.009),
+        color: pick(COLORS),
       });
     };
 
-    const drawGrid = (W: number, H: number, shift: number) => {
-      const vy = H * 0.72;
-      const gc = hslToRgb(240 + shift, 70, 65);
-      const dc = hslToRgb(265 + shift, 70, 65);
-      ctx.save();
-      for (let i = 1; i <= 10; i++) {
-        const fi = i / 10;
-        const y = vy + (H - vy) * Math.pow(fi, 0.6);
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y);
-        ctx.strokeStyle = rgba(gc, 0.025 + fi * 0.04);
-        ctx.lineWidth = 0.5; ctx.stroke();
-      }
-      const vx = W * 0.5;
-      for (let i = 0; i <= 18; i++) {
-        const fi = i / 18;
-        const xB = fi * W;
-        const xT = vx + (xB - vx) * 0.06;
-        const ofs = Math.abs(fi - 0.5);
-        ctx.beginPath(); ctx.moveTo(xT, H * 0.15); ctx.lineTo(xB, H);
-        ctx.strokeStyle = rgba(gc, 0.02 + ofs * 0.07);
-        ctx.lineWidth = 0.5; ctx.stroke();
-      }
-      for (let i = -4; i <= 12; i++) {
-        const x = (i / 12) * W;
-        ctx.beginPath(); ctx.moveTo(x - W * 0.3, 0); ctx.lineTo(x + W * 0.3, H);
-        ctx.strokeStyle = rgba(dc, 0.018);
-        ctx.lineWidth = 0.5; ctx.stroke();
-      }
-      ctx.restore();
+    /* ── resize ───────────────────────────────────────────── */
+    const resize = () => {
+      W = canvas.width  = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
+      init();
     };
 
-
-    const drawDataLines = (shift: number) => {
-      for (const dl of lines.current) {
-        dl.progress += dl.speed;
-        if (dl.progress > 1 + dl.tailLength) {
-          Object.assign(dl, makeLine()); dl.progress = 0; continue;
-        }
-        const p    = dl.progress;
-        const tail = dl.tailLength;
-        const segs = 24;
-        const c    = hslToRgb(dl.baseHue + dl.hueRange + shift, 85, 68);
-
-        for (let s = 0; s < segs; s++) {
-          const t0 = Math.max(0, p - tail + (s       / segs) * tail);
-          const t1 = Math.max(0, p - tail + ((s + 1) / segs) * tail);
-          if (t0 >= p || t1 > 1) continue;
-          const alpha = (s / (segs - 1)) * dl.opacity;
-          ctx.beginPath();
-          ctx.moveTo(dl.x1 + (dl.x2-dl.x1)*t0,              dl.y1 + (dl.y2-dl.y1)*t0);
-          ctx.lineTo(dl.x1 + (dl.x2-dl.x1)*Math.min(t1, p), dl.y1 + (dl.y2-dl.y1)*Math.min(t1, p));
-          ctx.strokeStyle = rgba(c, alpha);
-          ctx.lineWidth   = dl.width; ctx.stroke();
-        }
-
-        if (p <= 1) {
-          const hx = dl.x1 + (dl.x2-dl.x1)*p;
-          const hy = dl.y1 + (dl.y2-dl.y1)*p;
-          const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, 10);
-          glow.addColorStop(0, rgba(c, 0.9));
-          glow.addColorStop(1, rgba(c, 0));
-          ctx.beginPath(); ctx.arc(hx, hy, 10, 0, Math.PI*2);
-          ctx.fillStyle = glow; ctx.fill();
-          ctx.beginPath(); ctx.arc(hx, hy, 1.8, 0, Math.PI*2);
-          ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fill();
-        }
-      }
-    };
-
-    const drawParticles = (W: number, H: number, shift: number) => {
-      for (const p of particles.current) {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0 || p.x > W) p.vx *= -1;
-        if (p.y < 0 || p.y > H) p.vy *= -1;
-        p.pulse += 0.018;
-        const pulse = 0.75 + 0.25 * Math.sin(p.pulse);
-        const c     = hslToRgb(p.baseHue + shift, 85, 70);
-        const gr    = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 9 * pulse);
-        gr.addColorStop(0, rgba(c, 0.28 * pulse));
-        gr.addColorStop(1, rgba(c, 0));
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * 9 * pulse, 0, Math.PI*2);
-        ctx.fillStyle = gr; ctx.fill();
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * pulse, 0, Math.PI*2);
-        ctx.fillStyle = rgba(c, p.opacity); ctx.fill();
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * 0.35, 0, Math.PI*2);
-        ctx.fillStyle = `rgba(255,255,255,${(0.55 * pulse).toFixed(3)})`; ctx.fill();
-      }
-    };
-
-    /* ── main loop ───────────────────────────────────────── */
+    /* ── main render loop ─────────────────────────────────── */
     const draw = () => {
-      tick.current += 0.016;
-      const { W, H } = WH.current;
-      /* hue shift: full 360° cycle every ~190 s (tick * 0.085 deg/frame) */
-      const shift = (tick.current * 0.085 * (180 / Math.PI)) % 360;
-
+      tick++;
       ctx.clearRect(0, 0, W, H);
-      drawAuroras(W, H, shift);
-      drawGrid(W, H, shift);
-      drawDataLines(shift);
-      drawParticles(W, H, shift);
 
-      rafRef.current = requestAnimationFrame(draw);
+      /* spawn packets */
+      if (tick % 18 === 0) spawnPacket();
+
+      /* refresh connections periodically */
+      if (tick % CONN_FREQ === 0) buildConns();
+
+      /* ── update + draw connections ── */
+      ctx.lineWidth = 0.6;
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        for (const j of conns[i]) {
+          if (j <= i) continue;
+          const b   = nodes[j];
+          const d   = Math.hypot(a.x - b.x, a.y - b.y);
+          const t   = 1 - d / MAX_DIST;
+          const [r, g, bl] = a.color;
+
+          /* gradient edge: bright near active nodes */
+          const boost = (a.glow + b.glow) * 0.25;
+          const grad  = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+          grad.addColorStop(0, rgba(a.color, (t * 0.18) + boost));
+          grad.addColorStop(1, rgba(b.color, (t * 0.18) + boost));
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = grad;
+          ctx.stroke();
+        }
+      }
+
+      /* ── update + draw packets ── */
+      const live: Packet[] = [];
+      for (const p of packets) {
+        p.progress += p.speed;
+        if (p.progress >= 1) {
+          /* activate destination */
+          nodes[p.to].glow  = 1;
+          nodes[p.to].ring  = 0;
+          nodes[p.to].ringAlpha = 1;
+          continue;
+        }
+        live.push(p);
+
+        const a = nodes[p.from];
+        const b = nodes[p.to];
+        const px = a.x + (b.x - a.x) * p.progress;
+        const py = a.y + (b.y - a.y) * p.progress;
+
+        /* head glow */
+        const hg = ctx.createRadialGradient(px, py, 0, px, py, 14);
+        hg.addColorStop(0, rgba(p.color, 0.55));
+        hg.addColorStop(1, rgba(p.color, 0));
+        ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2);
+        ctx.fillStyle = hg; ctx.fill();
+
+        /* bright core */
+        ctx.beginPath(); ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fill();
+
+        /* tail */
+        const tail = 0.09;
+        const t0   = Math.max(0, p.progress - tail);
+        const tx0  = a.x + (b.x - a.x) * t0;
+        const ty0  = a.y + (b.y - a.y) * t0;
+        const tailGrad = ctx.createLinearGradient(tx0, ty0, px, py);
+        tailGrad.addColorStop(0, rgba(p.color, 0));
+        tailGrad.addColorStop(1, rgba(p.color, 0.6));
+        ctx.beginPath(); ctx.moveTo(tx0, ty0); ctx.lineTo(px, py);
+        ctx.strokeStyle = tailGrad;
+        ctx.lineWidth   = 1.5; ctx.stroke();
+      }
+      packets = live;
+
+      /* ── update + draw nodes ── */
+      for (const n of nodes) {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+        n.glow      = Math.max(0, n.glow - 0.018);
+        n.ringAlpha = Math.max(0, n.ringAlpha - 0.022);
+        if (n.ringAlpha > 0) n.ring += 1.8;
+
+        /* expanding activation ring */
+        if (n.ringAlpha > 0) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.ring, 0, Math.PI * 2);
+          ctx.strokeStyle = rgba(n.color, n.ringAlpha * 0.6);
+          ctx.lineWidth   = 1;
+          ctx.stroke();
+        }
+
+        /* soft ambient halo */
+        const haloR = n.r * 7 + n.glow * 8;
+        const halo  = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, haloR);
+        halo.addColorStop(0, rgba(n.color, 0.10 + n.glow * 0.25));
+        halo.addColorStop(1, rgba(n.color, 0));
+        ctx.beginPath(); ctx.arc(n.x, n.y, haloR, 0, Math.PI * 2);
+        ctx.fillStyle = halo; ctx.fill();
+
+        /* node body */
+        const r = n.r + n.glow * 1.8;
+        ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(n.color, 0.75 + n.glow * 0.25);
+        ctx.fill();
+
+        /* white specular core */
+        ctx.beginPath(); ctx.arc(n.x, n.y, r * 0.38, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${(0.65 + n.glow * 0.35).toFixed(2)})`;
+        ctx.fill();
+      }
+
+      raf.current = requestAnimationFrame(draw);
     };
 
     resize();
@@ -223,7 +216,7 @@ export default function AnimatedBackground() {
     draw();
     return () => {
       window.removeEventListener("resize", resize);
-      cancelAnimationFrame(rafRef.current);
+      cancelAnimationFrame(raf.current);
     };
   }, []);
 
