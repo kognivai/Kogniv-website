@@ -31,7 +31,7 @@ export default function Hero() {
           First AI Consulting Platform for ServiceNow
         </p>
 
-        <p className="text-[#8BA4C8] text-lg md:text-xl max-w-2xl leading-relaxed mb-10">
+        <p className="text-[#86EFAC] text-lg md:text-xl max-w-2xl leading-relaxed mb-10">
           Kogniv creates 'Future of Work' for Organizations, deploying autonomous AI that operates under strict human-defined guardrails. Kogniv embeds with your team to deliver measurable, 'AI-Native Operations'.
         </p>
 
