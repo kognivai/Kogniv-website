@@ -1,3 +1,5 @@
+import { HexGrid, GlowOrb, StarField } from "./DecorativeBg";
+
 const pillars = [
   {
     id: "it-ops",
@@ -43,36 +45,44 @@ const pillars = [
 
 export default function PillarsSection() {
   return (
-    <section id="solutions" className="max-w-[1280px] mx-auto px-6 md:px-10 py-16 md:py-24">
-      <div className="mb-12">
-        <p className="text-[#6366F1] text-sm font-semibold mb-3 tracking-wide uppercase">Solutions</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight max-w-xl mb-3">
-          We power enterprises across four transformation pillars.
-        </h2>
-        <p className="text-[#8BA4C8] text-lg max-w-lg">Built on ServiceNow, with Anthropic and OpenAI at the model layer.</p>
-      </div>
+    <section id="solutions" className="relative overflow-hidden">
+      {/* Background graphics */}
+      <HexGrid opacity={0.09} color="#6366F1" size={44} />
+      <GlowOrb x="15%" y="50%" size={500} color="#6366F1" opacity={0.09} />
+      <GlowOrb x="90%" y="30%" size={380} color="#A855F7" opacity={0.08} />
+      <StarField count={50} color="#22D3EE" opacity={0.25} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {pillars.map(p => (
-          <div key={p.id} className="bg-[#131F35] border border-[#1E3055] rounded-2xl p-6 flex flex-col gap-4 hover:border-[#3B4F88] hover:bg-[#1A2845] transition-colors duration-300">
-            <div className="w-12 h-12 rounded-xl bg-[#0B0F1E] border border-[#1E3055] flex items-center justify-center">
-              {p.icon}
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10 py-16 md:py-24">
+        <div className="mb-12">
+          <p className="text-[#6366F1] text-sm font-semibold mb-3 tracking-wide uppercase">Solutions</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight max-w-xl mb-3">
+            We power enterprises across four transformation pillars.
+          </h2>
+          <p className="text-[#8BA4C8] text-lg max-w-lg">Built on ServiceNow, with Anthropic and OpenAI at the model layer.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {pillars.map(p => (
+            <div key={p.id} className="bg-[#131F35]/80 backdrop-blur-sm border border-[#1E3055] rounded-2xl p-6 flex flex-col gap-4 hover:border-[#3B4F88] hover:bg-[#1A2845] transition-colors duration-300">
+              <div className="w-12 h-12 rounded-xl bg-[#0B0F1E] border border-[#1E3055] flex items-center justify-center">
+                {p.icon}
+              </div>
+              <div>
+                <span className="text-[#6366F1] text-xs font-semibold uppercase tracking-wide">{p.label}</span>
+                <h3 className="text-white font-semibold text-base mt-1 leading-snug">{p.headline}</h3>
+              </div>
+              <p className="text-[#8BA4C8] text-sm leading-relaxed flex-1">{p.body}</p>
+              <ul className="flex flex-col gap-1.5">
+                {p.features.map(f => (
+                  <li key={f} className="flex items-center gap-2 text-[#4A6E90] text-xs">
+                    <span className="w-1 h-1 rounded-full bg-[#6366F1] flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div>
-              <span className="text-[#6366F1] text-xs font-semibold uppercase tracking-wide">{p.label}</span>
-              <h3 className="text-white font-semibold text-base mt-1 leading-snug">{p.headline}</h3>
-            </div>
-            <p className="text-[#8BA4C8] text-sm leading-relaxed flex-1">{p.body}</p>
-            <ul className="flex flex-col gap-1.5">
-              {p.features.map(f => (
-                <li key={f} className="flex items-center gap-2 text-[#4A6E90] text-xs">
-                  <span className="w-1 h-1 rounded-full bg-[#6366F1] flex-shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );

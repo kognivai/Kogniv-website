@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ConcentricRings, GlowOrb, DotGrid } from "./DecorativeBg";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
@@ -49,10 +50,17 @@ export default function ContactSection() {
   return (
     <section
       id="contact"
-      className="border-t border-[#1E3055] py-20 md:py-28"
+      className="relative overflow-hidden border-t border-[#1E3055] py-20 md:py-28"
       style={{ background: "linear-gradient(160deg, #0F1628 0%, #0B0F1E 100%)" }}
     >
-      <div className="max-w-[1280px] mx-auto px-6 md:px-10">
+      {/* Background graphics */}
+      <DotGrid opacity={0.12} color="#6366F1" spacing={28} />
+      <ConcentricRings cx="90%" cy="50%" rings={5} baseR={80} step={110} color="#6366F1" opacity={0.11} />
+      <ConcentricRings cx="5%" cy="80%" rings={3} baseR={60} step={90} color="#A855F7" opacity={0.09} />
+      <GlowOrb x="75%" y="20%" size={420} color="#6366F1" opacity={0.10} />
+      <GlowOrb x="10%" y="60%" size={320} color="#A855F7" opacity={0.08} />
+
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div>
             <span className="inline-block bg-[#6366F1] text-white text-xs font-semibold px-3.5 py-1.5 rounded-full mb-6">

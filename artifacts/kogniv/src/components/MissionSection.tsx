@@ -1,8 +1,17 @@
+import { DotGrid, ArcRings, GlowOrb } from "./DecorativeBg";
+
 export default function MissionSection() {
   return (
-    <section id="about" className="border-y border-[#1E3055] py-20 md:py-28"
+    <section id="about" className="relative overflow-hidden border-y border-[#1E3055] py-20 md:py-28"
       style={{ background: "linear-gradient(160deg, #0F1628 0%, #0B0F1E 100%)" }}>
-      <div className="max-w-[1280px] mx-auto px-6 md:px-10">
+
+      {/* Background graphics */}
+      <DotGrid opacity={0.14} color="#6366F1" spacing={32} />
+      <ArcRings cx="105%" cy="-5%" r1={320} r2={500} r3={680} color="#6366F1" opacity={0.13} />
+      <GlowOrb x="10%" y="80%" size={420} color="#A855F7" opacity={0.10} />
+      <GlowOrb x="85%" y="60%" size={300} color="#22D3EE" opacity={0.07} />
+
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
           {/* Left — text */}

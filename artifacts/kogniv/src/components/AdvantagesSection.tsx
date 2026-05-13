@@ -1,3 +1,5 @@
+import { ArcRings, GlowOrb, StarField, DotGrid } from "./DecorativeBg";
+
 const advantages = [
   {
     title: "Deep Industry Expertise",
@@ -35,31 +37,42 @@ export default function AdvantagesSection() {
   return (
     <>
       {/* Advantages */}
-      <section className="max-w-[1280px] mx-auto px-6 md:px-10 py-16 md:py-24">
-        <div className="mb-12">
-          <p className="text-[#6366F1] text-sm font-semibold mb-3 tracking-wide uppercase">Why Kogniv</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight max-w-xl">
-            Strategic advantages of partnering with Kogniv.
-          </h2>
-        </div>
+      <section className="relative overflow-hidden">
+        <DotGrid opacity={0.13} color="#A855F7" spacing={30} />
+        <GlowOrb x="90%" y="50%" size={480} color="#A855F7" opacity={0.10} />
+        <GlowOrb x="5%" y="30%" size={350} color="#6366F1" opacity={0.09} />
+        <StarField count={45} color="#A855F7" opacity={0.28} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {advantages.map(a => (
-            <div key={a.title} className="bg-[#131F35] border border-[#1E3055] rounded-2xl p-7 flex gap-5 hover:border-[#2E4878] transition-colors">
-              <div className="text-2xl flex-shrink-0 mt-0.5" style={{ color: a.color }}>{a.icon}</div>
-              <div>
-                <h3 className="text-white font-semibold text-base mb-2">{a.title}</h3>
-                <p className="text-[#8BA4C8] text-sm leading-relaxed">{a.body}</p>
+        <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10 py-16 md:py-24">
+          <div className="mb-12">
+            <p className="text-[#6366F1] text-sm font-semibold mb-3 tracking-wide uppercase">Why Kogniv</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight max-w-xl">
+              Strategic advantages of partnering with Kogniv.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {advantages.map(a => (
+              <div key={a.title} className="bg-[#131F35]/80 backdrop-blur-sm border border-[#1E3055] rounded-2xl p-7 flex gap-5 hover:border-[#2E4878] transition-colors">
+                <div className="text-2xl flex-shrink-0 mt-0.5" style={{ color: a.color }}>{a.icon}</div>
+                <div>
+                  <h3 className="text-white font-semibold text-base mb-2">{a.title}</h3>
+                  <p className="text-[#8BA4C8] text-sm leading-relaxed">{a.body}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Founders */}
-      <section id="team" className="border-t border-[#1E3055] py-16 md:py-24"
+      <section id="team" className="relative overflow-hidden border-t border-[#1E3055] py-16 md:py-24"
         style={{ background: "linear-gradient(160deg, #0F1628 0%, #0B0F1E 100%)" }}>
-        <div className="max-w-[1280px] mx-auto px-6 md:px-10">
+        <ArcRings cx="100%" cy="0%" r1={300} r2={480} r3={640} color="#6366F1" opacity={0.10} />
+        <GlowOrb x="20%" y="70%" size={400} color="#6366F1" opacity={0.09} />
+        <StarField count={30} color="#22D3EE" opacity={0.22} />
+
+        <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10">
           <div className="mb-10">
             <p className="text-[#6366F1] text-sm font-semibold mb-3 tracking-wide uppercase">Leadership</p>
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
@@ -68,17 +81,14 @@ export default function AdvantagesSection() {
           </div>
 
           <div className="max-w-xl">
-            <div className="bg-[#131F35] border border-[#1E3055] rounded-2xl p-7 flex flex-col gap-5 hover:border-[#2E4878] transition-colors">
-              {/* Avatar */}
+            <div className="bg-[#131F35]/80 backdrop-blur-sm border border-[#1E3055] rounded-2xl p-7 flex flex-col gap-5 hover:border-[#2E4878] transition-colors">
               <div className="w-14 h-14 rounded-full bg-[#0B0F1E] border border-[#1E3055] flex items-center justify-center text-[#6366F1] font-bold text-xl">
                 P
               </div>
-              {/* Name + current title */}
               <div>
                 <div className="text-white font-bold text-lg">Praveen</div>
                 <div className="text-[#6366F1] text-sm font-semibold mt-0.5">Founder & CEO, Kogniv</div>
               </div>
-              {/* Prior roles */}
               <div className="flex flex-col gap-2">
                 {priorRoles.map(role => (
                   <div key={role} className="flex items-center gap-2.5">

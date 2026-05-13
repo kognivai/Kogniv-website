@@ -1,9 +1,14 @@
 import Logo from "./Logo";
+import { DotGrid, GlowOrb } from "./DecorativeBg";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-[#1E3055] py-12 md:py-16" style={{ background: "#080C1A" }}>
-      <div className="max-w-[1280px] mx-auto px-6 md:px-10">
+    <footer className="relative overflow-hidden border-t border-[#1E3055] py-12 md:py-16" style={{ background: "#080C1A" }}>
+      {/* Background graphics */}
+      <DotGrid opacity={0.10} color="#6366F1" spacing={36} />
+      <GlowOrb x="50%" y="120%" size={600} color="#6366F1" opacity={0.08} />
+
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           <div className="md:col-span-2">
             <Logo size={36} showWordmark={true} className="mb-4" />

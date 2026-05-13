@@ -8,6 +8,7 @@ import FeaturesSection from "@/components/FeaturesSection";
 import AdvantagesSection from "@/components/AdvantagesSection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
+import { ConcentricRings, GlowOrb, StarField } from "@/components/DecorativeBg";
 
 function App() {
   return (
@@ -17,8 +18,16 @@ function App() {
       <MissionSection />
       <PillarsSection />
       <KAFESection />
-      <section id="platform" className="border-t border-[#1E3055]">
-        <div className="max-w-[1280px] mx-auto px-6 md:px-10 pt-16 md:pt-24">
+
+      {/* Platform section */}
+      <section id="platform" className="relative overflow-hidden border-t border-[#1E3055]">
+        {/* Background graphics */}
+        <ConcentricRings cx="50%" cy="0%" rings={5} baseR={150} step={160} color="#6366F1" opacity={0.09} />
+        <GlowOrb x="10%" y="30%" size={400} color="#6366F1" opacity={0.09} />
+        <GlowOrb x="85%" y="70%" size={350} color="#22D3EE" opacity={0.07} />
+        <StarField count={40} color="#6366F1" opacity={0.28} />
+
+        <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10 pt-16 md:pt-24">
           <p className="text-[#6366F1] text-sm font-semibold mb-3 tracking-wide uppercase">Platform</p>
           <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-2">
             The Kogniv Platform.
@@ -30,7 +39,7 @@ function App() {
         <PhaseCards />
 
         {/* Platform dashboard screenshot */}
-        <div className="max-w-[1280px] mx-auto px-6 md:px-10 pb-16 md:pb-24">
+        <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10 pb-16 md:pb-24">
           <div className="mt-4 rounded-2xl overflow-hidden border border-[#1E3055] shadow-[0_0_60px_rgba(99,102,241,0.12)]">
             <div className="flex items-center gap-2 px-4 py-3 bg-[#0F1928] border-b border-[#1E3055]">
               <div className="flex gap-1.5">
@@ -51,6 +60,7 @@ function App() {
           </p>
         </div>
       </section>
+
       <FeaturesSection />
       <AdvantagesSection />
       <ContactSection />

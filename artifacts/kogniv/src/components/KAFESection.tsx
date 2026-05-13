@@ -1,3 +1,5 @@
+import { DiagonalLines, GlowOrb, ArcRings, StarField } from "./DecorativeBg";
+
 const steps = [
   {
     n: "01",
@@ -42,9 +44,17 @@ const capabilities = [
 
 export default function KAFESection() {
   return (
-    <section id="kafe" className="border-y border-[#1E3055] py-20 md:py-28"
+    <section id="kafe" className="relative overflow-hidden border-y border-[#1E3055] py-20 md:py-28"
       style={{ background: "linear-gradient(160deg, #0F1628 0%, #0B0F1E 100%)" }}>
-      <div className="max-w-[1280px] mx-auto px-6 md:px-10">
+
+      {/* Background graphics */}
+      <DiagonalLines color="#6366F1" opacity={0.06} angle={40} />
+      <ArcRings cx="-5%" cy="110%" r1={400} r2={600} r3={800} color="#A855F7" opacity={0.11} />
+      <GlowOrb x="90%" y="20%" size={500} color="#6366F1" opacity={0.11} />
+      <GlowOrb x="50%" y="80%" size={350} color="#22D3EE" opacity={0.07} />
+      <StarField count={35} color="#6366F1" opacity={0.35} />
+
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-10">
 
         {/* Header */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
@@ -74,7 +84,7 @@ export default function KAFESection() {
           <p className="text-white text-xs font-semibold tracking-[0.18em] uppercase mb-6">The KAFE Process</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {steps.map((s, i) => (
-              <div key={s.n} className="relative bg-[#131F35] border border-[#1E3055] rounded-xl p-5 hover:border-[#2E4878] transition-colors">
+              <div key={s.n} className="relative bg-[#131F35]/80 backdrop-blur-sm border border-[#1E3055] rounded-xl p-5 hover:border-[#2E4878] transition-colors">
                 <div className="text-xs font-mono mb-3" style={{ color: s.color }}>{s.n}</div>
                 <div className="font-semibold text-white text-sm mb-2">{s.title}</div>
                 <p className="text-[#4A6E90] text-xs leading-relaxed">{s.body}</p>
@@ -91,7 +101,7 @@ export default function KAFESection() {
           <p className="text-white text-xs font-semibold tracking-[0.18em] uppercase mb-5">Everything the factory includes</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {capabilities.map(c => (
-              <div key={c.label} className="flex items-start gap-3 bg-[#131F35] border border-[#1E3055] rounded-xl px-4 py-3.5 hover:border-[#2E4878] transition-colors">
+              <div key={c.label} className="flex items-start gap-3 bg-[#131F35]/80 backdrop-blur-sm border border-[#1E3055] rounded-xl px-4 py-3.5 hover:border-[#2E4878] transition-colors">
                 <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#6366F1] flex-shrink-0" />
                 <div>
                   <div className="text-white text-sm font-medium">{c.label}</div>
