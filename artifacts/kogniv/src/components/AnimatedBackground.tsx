@@ -1,35 +1,33 @@
 import { useEffect, useRef } from "react";
 
+/* ─── palette ──────────────────────────────────────────────── */
+const COLORS = [
+  [99,  102, 241] as const,  // indigo  #6366F1
+  [34,  211, 238] as const,  // cyan    #22D3EE
+  [168,  85, 247] as const,  // purple  #A855F7
+];
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+const rand = (a: number, b: number) => a + Math.random() * (b - a);
+const rgba = ([r, g, b]: readonly [number, number, number], a: number) =>
+  `rgba(${r},${g},${b},${a.toFixed(3)})`;
+
 /* ─── types ────────────────────────────────────────────────── */
-type Col = [number, number, number];
-const rgba = ([r, g, b]: Col, a: number) => `rgba(${r},${g},${b},${a.toFixed(3)})`;
-const lerp  = (a: number, b: number, t: number) => a + (b - a) * t;
-const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
-const rand  = (a: number, b: number) => a + Math.random() * (b - a);
-const lerpCol = (a: Col, b: Col, t: number): Col =>
-  [Math.round(lerp(a[0], b[0], t)), Math.round(lerp(a[1], b[1], t)), Math.round(lerp(a[2], b[2], t))];
-
-/* ─── palette ───────────────────────────────────────────────── */
-const INDIGO: Col = [99,  102, 241];
-const CYAN:   Col = [34,  211, 238];
-const PURPLE: Col = [168,  85, 247];
-const RED:    Col = [239, 100,  60];
-const DARK:   Col = [11,   19,  45];
-
-const LABELS = ["ITSM", "HR", "IT Ops", "CRM", "Vendor", "Approval", "Audit", "Catalog", "Finance", "Legal"];
-
-interface Block {
-  id: number; x: number; y: number; vx: number; vy: number;
-  label: string; fixProg: number; pulse: number;
+interface Node {
+  x: number; y: number; vx: number; vy: number;
+  r: number; color: readonly [number, number, number];
+  glow: number;        // 0-1, decays after activation
+  ring: number;        // expanding ring radius, 0 = none
+  ringAlpha: number;
 }
-interface Edge {
-  a: number; b: number; fixProg: number;
-  jag: [number, number][];  // jagged waypoints for broken state
-  pkt: number;              // packet progress 0-1, -1=none
-  pktCol: Col;
+interface Packet {
+  from: number; to: number;
+  progress: number; speed: number;
+  color: readonly [number, number, number];
 }
 
-const BW = 72, BH = 26;
+/* ─── constants ─────────────────────────────────────────────── */
+const MAX_DIST  = 190;
+const CONN_FREQ = 40;   // frames between connection refresh
 
 export default function AnimatedBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,378 +39,181 @@ export default function AnimatedBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let W = 0, H = 0;
-    let blocks: Block[] = [];
-    let edges:  Edge[]  = [];
+    let W = 0, H = 0, tick = 0;
+    let nodes:   Node[]   = [];
+    let packets: Packet[] = [];
+    let conns:   number[][] = [];   // conns[i] = list of j indices node i connects to
 
-    /* ── cycle state ──────────────────────────────────────────
-       0.00 – 0.18  Chaos   (broken paths, floating blocks)
-       0.18 – 0.62  Fixing  (AI orb travels, paths heal)
-       0.62 – 0.88  Orch    (clean orchestration map)
-       0.88 – 1.00  Fade    (smooth reset)
-    ───────────────────────────────────────────────────────── */
-    const CYCLE_S  = 20;
-    const P_FIX    = 0.18;
-    const P_ORCH   = 0.62;
-    const P_FADE   = 0.88;
-
-    let cycleT    = 0;
-    let lastTime  = 0;
-    let aiSrcBlk  = 0;           // block AI orb is currently at
-    let aiEdgeIdx = -1;          // edge currently being traversed
-    let aiEdgePr  = 0;           // progress along that edge (0-1)
-    let aiX = 0, aiY = 0;
-
-    /* ── helpers ──────────────────────────────────────────── */
-    const makeJag = (a: Block, b: Block): [number, number][] => {
-      const pts: [number, number][] = [];
-      const steps = Math.floor(rand(3, 6));
-      for (let i = 1; i < steps; i++) {
-        const t = i / steps;
-        const jit = rand(18, 45) * (Math.random() > 0.5 ? 1 : -1);
-        pts.push([lerp(a.x, b.x, t) + jit, lerp(a.y, b.y, t) + jit * 0.5]);
-      }
-      return pts;
-    };
-
-    const bezier = (a: Block, b: Block, t: number): [number, number] => {
-      const cpx = (a.x + b.x) / 2 + (b.y - a.y) * 0.18;
-      const cpy = (a.y + b.y) / 2 - (b.x - a.x) * 0.18;
-      return [
-        (1-t)*(1-t)*a.x + 2*(1-t)*t*cpx + t*t*b.x,
-        (1-t)*(1-t)*a.y + 2*(1-t)*t*cpy + t*t*b.y,
-      ];
-    };
-
-    /* ── init ─────────────────────────────────────────────── */
+    /* ── initialise nodes ─────────────────────────────────── */
     const init = () => {
-      const N = clamp(Math.floor(W * H / 18000), 6, 10);
-      blocks = Array.from({ length: N }, (_, i) => ({
-        id: i,
-        x: rand(BW * 2, W - BW * 2),
-        y: rand(BH * 3, H - BH * 3),
-        vx: rand(-0.10, 0.10),
-        vy: rand(-0.10, 0.10),
-        label: LABELS[i % LABELS.length],
-        fixProg: 0,
-        pulse: rand(0, Math.PI * 2),
+      const count = Math.min(70, Math.max(30, Math.floor(W * H / 14000)));
+      nodes = Array.from({ length: count }, () => ({
+        x: rand(0, W), y: rand(0, H),
+        vx: rand(-0.12, 0.12), vy: rand(-0.12, 0.12),
+        r: rand(1.8, 3.2),
+        color: pick(COLORS),
+        glow: 0, ring: 0, ringAlpha: 0,
       }));
-
-      edges = [];
-      for (let i = 0; i < blocks.length; i++) {
-        const sorted = blocks
-          .map((b, j) => ({ j, d: Math.hypot(b.x - blocks[i].x, b.y - blocks[i].y) }))
-          .filter(d => d.j !== i).sort((a, b) => a.d - b.d);
-        const nConns = Math.floor(rand(1, 3));
-        for (let k = 0; k < nConns && k < sorted.length; k++) {
-          const j = sorted[k].j;
-          if (!edges.some(e => (e.a === i && e.b === j) || (e.a === j && e.b === i))) {
-            edges.push({ a: i, b: j, fixProg: 0, jag: makeJag(blocks[i], blocks[j]), pkt: -1, pktCol: CYAN });
-          }
-        }
-      }
-
-      cycleT = 0;
-      aiSrcBlk = Math.floor(Math.random() * blocks.length);
-      aiEdgeIdx = -1;
-      aiEdgePr  = 0;
-      aiX = blocks[aiSrcBlk].x;
-      aiY = blocks[aiSrcBlk].y;
+      packets = [];
+      buildConns();
     };
 
+    /* ── build adjacency from proximity ───────────────────── */
+    const buildConns = () => {
+      conns = nodes.map((a, i) =>
+        nodes.reduce<number[]>((acc, b, j) => {
+          if (j === i) return acc;
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < MAX_DIST) acc.push(j);
+          return acc;
+        }, [])
+      );
+    };
+
+    /* ── spawn a travelling packet ────────────────────────── */
+    const spawnPacket = () => {
+      if (packets.length >= 28) return;
+      const fi = Math.floor(Math.random() * nodes.length);
+      const nb = conns[fi];
+      if (!nb || nb.length === 0) return;
+      packets.push({
+        from: fi,
+        to:   nb[Math.floor(Math.random() * nb.length)],
+        progress: 0,
+        speed: rand(0.003, 0.009),
+        color: pick(COLORS),
+      });
+    };
+
+    /* ── resize ───────────────────────────────────────────── */
     const resize = () => {
       W = canvas.width  = canvas.offsetWidth;
       H = canvas.height = canvas.offsetHeight;
       init();
     };
 
-    /* ── drawing primitives ───────────────────────────────── */
-    const rrect = (x: number, y: number, w: number, h: number, r: number) => {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
-      ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-      ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
-      ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
-      ctx.closePath();
-    };
-
-    const drawBrokenEdge = (e: Edge, alpha: number) => {
-      const a = blocks[e.a], b = blocks[e.b];
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.setLineDash([5, 9]);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = rgba(RED, 0.45);
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      for (const [px, py] of e.jag) ctx.lineTo(px, py);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-      /* small "break" X markers at midpoint */
-      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-      ctx.setLineDash([]);
-      ctx.strokeStyle = rgba(RED, 0.55);
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(mx - 4, my - 4); ctx.lineTo(mx + 4, my + 4); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(mx + 4, my - 4); ctx.lineTo(mx - 4, my + 4); ctx.stroke();
-      ctx.restore();
-    };
-
-    const drawFixedEdge = (e: Edge, alpha: number) => {
-      const a = blocks[e.a], b = blocks[e.b];
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      const cpx = (a.x + b.x) / 2 + (b.y - a.y) * 0.18;
-      const cpy = (a.y + b.y) / 2 - (b.x - a.x) * 0.18;
-      const gr = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-      gr.addColorStop(0, rgba(INDIGO, 0.65));
-      gr.addColorStop(1, rgba(CYAN,   0.65));
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.quadraticCurveTo(cpx, cpy, b.x, b.y);
-      ctx.strokeStyle = gr;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.restore();
-    };
-
-    const drawPacket = (e: Edge) => {
-      if (e.pkt < 0 || e.pkt > 1) return;
-      const a = blocks[e.a], b = blocks[e.b];
-      const [px, py] = bezier(a, b, e.pkt);
-      const [t0, t0_] = bezier(a, b, Math.max(0, e.pkt - 0.1));
-      const gr = ctx.createRadialGradient(px, py, 0, px, py, 12);
-      gr.addColorStop(0, rgba(e.pktCol, 0.7));
-      gr.addColorStop(1, rgba(e.pktCol, 0));
-      ctx.beginPath(); ctx.arc(px, py, 12, 0, Math.PI * 2);
-      ctx.fillStyle = gr; ctx.fill();
-      ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.96)"; ctx.fill();
-      /* tail */
-      const tailGr = ctx.createLinearGradient(t0_, py, px, py);
-      tailGr.addColorStop(0, rgba(e.pktCol, 0));
-      tailGr.addColorStop(1, rgba(e.pktCol, 0.55));
-      ctx.beginPath(); ctx.moveTo(t0, t0_); ctx.lineTo(px, py);
-      ctx.strokeStyle = tailGr; ctx.lineWidth = 1.5; ctx.stroke();
-    };
-
-    const drawBlock = (b: Block, alpha: number) => {
-      const fp  = b.fixProg;
-      const col = lerpCol(RED, INDIGO, fp);
-      const glc = lerpCol(RED, CYAN,   fp);
-      const pul = 0.85 + 0.15 * Math.sin(b.pulse);
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      /* glow halo */
-      const gr = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 48 * pul);
-      gr.addColorStop(0, rgba(glc, (0.06 + fp * 0.16) * pul));
-      gr.addColorStop(1, rgba(glc, 0));
-      ctx.beginPath(); ctx.arc(b.x, b.y, 48 * pul, 0, Math.PI * 2);
-      ctx.fillStyle = gr; ctx.fill();
-      /* block body */
-      rrect(b.x - BW/2, b.y - BH/2, BW, BH, 5);
-      ctx.fillStyle = rgba(DARK, 0.88);
-      ctx.fill();
-      /* border */
-      ctx.strokeStyle = rgba(col, 0.85);
-      ctx.lineWidth   = fp > 0.5 ? 1.5 : 1;
-      ctx.stroke();
-      /* status dot */
-      const dotCol: Col = fp > 0.8 ? CYAN : fp > 0.3 ? PURPLE : RED;
-      ctx.beginPath(); ctx.arc(b.x - BW/2 + 8, b.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(dotCol, 0.95); ctx.fill();
-      /* label */
-      ctx.fillStyle = rgba(lerpCol([220, 100, 60], [200, 220, 255], fp), 0.92);
-      ctx.font = `${fp > 0.5 ? "600" : "400"} 10px ui-monospace, monospace`;
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(b.label, b.x + 4, b.y);
-      ctx.restore();
-    };
-
-    const drawAIOrb = (x: number, y: number, alpha: number) => {
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      /* outer ring */
-      ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2);
-      ctx.strokeStyle = rgba(CYAN, 0.35); ctx.lineWidth = 1; ctx.stroke();
-      /* glow */
-      const gr = ctx.createRadialGradient(x, y, 0, x, y, 32);
-      gr.addColorStop(0, rgba(CYAN, 0.9));
-      gr.addColorStop(0.45, rgba(CYAN, 0.35));
-      gr.addColorStop(1, rgba(CYAN, 0));
-      ctx.beginPath(); ctx.arc(x, y, 32, 0, Math.PI * 2);
-      ctx.fillStyle = gr; ctx.fill();
-      /* core */
-      ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(CYAN, 1); ctx.fill();
-      ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,1)"; ctx.fill();
-      ctx.restore();
-    };
-
-    /* draw a floating "chaos" label chip (in chaos phase only) */
-    const drawChaosLabel = (t: number) => {
-      if (t > 0.15) return;
-      const a = Math.min(1, t < 0.05 ? t / 0.05 : (0.15 - t) / 0.05);
-      ctx.save();
-      ctx.globalAlpha = a * 0.7;
-      ctx.font = "600 11px ui-sans-serif, sans-serif";
-      ctx.fillStyle = rgba(RED, 0.8);
-      ctx.textAlign = "center";
-      ctx.fillText("MANUAL PROCESSES", W / 2, H * 0.88);
-      ctx.restore();
-    };
-
-    const drawOrchLabel = (t: number) => {
-      const inOrch = t >= P_ORCH && t < P_FADE;
-      if (!inOrch) return;
-      const a = Math.min(1, (t - P_ORCH) / 0.06);
-      ctx.save();
-      ctx.globalAlpha = a * 0.65;
-      ctx.font = "600 11px ui-sans-serif, sans-serif";
-      ctx.fillStyle = rgba(CYAN, 0.9);
-      ctx.textAlign = "center";
-      ctx.fillText("AI-NATIVE OPERATIONS", W / 2, H * 0.88);
-      ctx.restore();
-    };
-
-    /* ── AI orb logic ─────────────────────────────────────── */
-    const updateAI = (dt: number) => {
-      if (aiEdgeIdx < 0) {
-        /* pick next unhealed edge from current block */
-        const cands = edges
-          .map((e, i) => ({ e, i }))
-          .filter(({ e }) => (e.a === aiSrcBlk || e.b === aiSrcBlk) && e.fixProg < 0.95);
-        if (cands.length === 0) {
-          /* jump to nearest unfixed block */
-          const unfixed = blocks.filter(b => b.fixProg < 0.5 && b.id !== aiSrcBlk);
-          if (unfixed.length > 0) {
-            aiSrcBlk = unfixed[Math.floor(Math.random() * unfixed.length)].id;
-            aiX = blocks[aiSrcBlk].x;
-            aiY = blocks[aiSrcBlk].y;
-          }
-          return;
-        }
-        const { i } = cands[Math.floor(Math.random() * cands.length)];
-        aiEdgeIdx = i;
-        edges[i].pkt = 0;
-        edges[i].pktCol = CYAN;
-        aiEdgePr = 0;
-      }
-
-      aiEdgePr = Math.min(1, aiEdgePr + dt * 0.55);
-      const e = edges[aiEdgeIdx];
-      e.pkt = aiEdgePr;
-      e.fixProg = Math.min(1, e.fixProg + dt * 0.9);
-
-      const src = blocks[e.a], dst = blocks[e.b];
-      const [x, y] = bezier(src, dst, aiEdgePr);
-      aiX = x; aiY = y;
-
-      if (aiEdgePr >= 1) {
-        const tgt = e.a === aiSrcBlk ? e.b : e.a;
-        e.fixProg = 1; e.pkt = -1;
-        blocks[tgt].fixProg = Math.min(1, blocks[tgt].fixProg + 0.5);
-        aiSrcBlk  = tgt;
-        aiEdgeIdx = -1;
-        aiEdgePr  = 0;
-      }
-      blocks[aiSrcBlk].fixProg = Math.min(1, blocks[aiSrcBlk].fixProg + dt * 1.6);
-    };
-
-    /* ── orchestrated data packets (after full fix) ────────── */
-    let orchTimer = 0;
-    const spawnOrchPacket = (dt: number) => {
-      orchTimer += dt;
-      if (orchTimer < 1.2) return;
-      orchTimer = 0;
-      const fixedEdges = edges.filter(e => e.fixProg > 0.9 && e.pkt < 0);
-      if (fixedEdges.length === 0) return;
-      const e = fixedEdges[Math.floor(Math.random() * fixedEdges.length)];
-      e.pkt = 0;
-      e.pktCol = Math.random() > 0.5 ? INDIGO : CYAN;
-    };
-
-    /* ── main loop ────────────────────────────────────────── */
-    const draw = (ts: number) => {
-      const dt = Math.min((ts - lastTime) / 1000, 0.05);
-      lastTime = ts;
+    /* ── main render loop ─────────────────────────────────── */
+    const draw = () => {
+      tick++;
       ctx.clearRect(0, 0, W, H);
 
-      cycleT += dt / CYCLE_S;
-      if (cycleT >= 1) {
-        /* reset */
-        blocks.forEach(b => { b.fixProg = 0; b.pulse = rand(0, Math.PI * 2); });
-        edges.forEach(e => {
-          e.fixProg = 0; e.pkt = -1;
-          e.jag = makeJag(blocks[e.a], blocks[e.b]);
-        });
-        cycleT = 0;
-        aiSrcBlk = Math.floor(Math.random() * blocks.length);
-        aiEdgeIdx = -1; aiEdgePr = 0;
-        aiX = blocks[aiSrcBlk].x; aiY = blocks[aiSrcBlk].y;
-        orchTimer = 0;
-      }
+      /* spawn packets */
+      if (tick % 18 === 0) spawnPacket();
 
-      const inChaos = cycleT < P_FIX;
-      const inFix   = cycleT >= P_FIX  && cycleT < P_ORCH;
-      const inOrch  = cycleT >= P_ORCH && cycleT < P_FADE;
-      const inFade  = cycleT >= P_FADE;
-      const fade    = inFade ? 1 - (cycleT - P_FADE) / (1 - P_FADE) : 1;
+      /* refresh connections periodically */
+      if (tick % CONN_FREQ === 0) buildConns();
 
-      /* move blocks */
-      for (const b of blocks) {
-        b.pulse += 0.022;
-        b.x += b.vx; b.y += b.vy;
-        b.x = clamp(b.x, BW, W - BW);
-        b.y = clamp(b.y, BH, H - BH);
-        if (b.x <= BW || b.x >= W - BW) b.vx *= -1;
-        if (b.y <= BH || b.y >= H - BH) b.vy *= -1;
-        /* in orch phase gently continue fixing straggler nodes */
-        if (inOrch || inFade) b.fixProg = Math.min(1, b.fixProg + dt * 0.3);
-      }
+      /* ── update + draw connections ── */
+      ctx.lineWidth = 0.6;
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        for (const j of conns[i]) {
+          if (j <= i) continue;
+          const b   = nodes[j];
+          const d   = Math.hypot(a.x - b.x, a.y - b.y);
+          const t   = 1 - d / MAX_DIST;
+          const [r, g, bl] = a.color;
 
-      /* update edge packets */
-      for (const e of edges) {
-        if (e.pkt >= 0) {
-          e.pkt += dt * 0.45;
-          if (e.pkt > 1) e.pkt = -1;
+          /* gradient edge: bright near active nodes */
+          const boost = (a.glow + b.glow) * 0.25;
+          const grad  = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+          grad.addColorStop(0, rgba(a.color, (t * 0.18) + boost));
+          grad.addColorStop(1, rgba(b.color, (t * 0.18) + boost));
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = grad;
+          ctx.stroke();
         }
       }
 
-      if (inFix)  updateAI(dt);
-      if (inOrch) spawnOrchPacket(dt);
+      /* ── update + draw packets ── */
+      const live: Packet[] = [];
+      for (const p of packets) {
+        p.progress += p.speed;
+        if (p.progress >= 1) {
+          /* activate destination */
+          nodes[p.to].glow  = 1;
+          nodes[p.to].ring  = 0;
+          nodes[p.to].ringAlpha = 1;
+          continue;
+        }
+        live.push(p);
 
-      /* ── draw ── */
-      /* broken edges (chaos / early fix) */
-      for (const e of edges) {
-        const bf = 1 - e.fixProg;
-        if (bf > 0) drawBrokenEdge(e, bf * fade);
+        const a = nodes[p.from];
+        const b = nodes[p.to];
+        const px = a.x + (b.x - a.x) * p.progress;
+        const py = a.y + (b.y - a.y) * p.progress;
+
+        /* head glow */
+        const hg = ctx.createRadialGradient(px, py, 0, px, py, 14);
+        hg.addColorStop(0, rgba(p.color, 0.55));
+        hg.addColorStop(1, rgba(p.color, 0));
+        ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2);
+        ctx.fillStyle = hg; ctx.fill();
+
+        /* bright core */
+        ctx.beginPath(); ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fill();
+
+        /* tail */
+        const tail = 0.09;
+        const t0   = Math.max(0, p.progress - tail);
+        const tx0  = a.x + (b.x - a.x) * t0;
+        const ty0  = a.y + (b.y - a.y) * t0;
+        const tailGrad = ctx.createLinearGradient(tx0, ty0, px, py);
+        tailGrad.addColorStop(0, rgba(p.color, 0));
+        tailGrad.addColorStop(1, rgba(p.color, 0.6));
+        ctx.beginPath(); ctx.moveTo(tx0, ty0); ctx.lineTo(px, py);
+        ctx.strokeStyle = tailGrad;
+        ctx.lineWidth   = 1.5; ctx.stroke();
       }
-      /* fixed edges */
-      for (const e of edges) {
-        if (e.fixProg > 0) drawFixedEdge(e, e.fixProg * fade);
+      packets = live;
+
+      /* ── update + draw nodes ── */
+      for (const n of nodes) {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+        n.glow      = Math.max(0, n.glow - 0.018);
+        n.ringAlpha = Math.max(0, n.ringAlpha - 0.022);
+        if (n.ringAlpha > 0) n.ring += 1.8;
+
+        /* expanding activation ring */
+        if (n.ringAlpha > 0) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.ring, 0, Math.PI * 2);
+          ctx.strokeStyle = rgba(n.color, n.ringAlpha * 0.6);
+          ctx.lineWidth   = 1;
+          ctx.stroke();
+        }
+
+        /* soft ambient halo */
+        const haloR = n.r * 7 + n.glow * 8;
+        const halo  = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, haloR);
+        halo.addColorStop(0, rgba(n.color, 0.10 + n.glow * 0.25));
+        halo.addColorStop(1, rgba(n.color, 0));
+        ctx.beginPath(); ctx.arc(n.x, n.y, haloR, 0, Math.PI * 2);
+        ctx.fillStyle = halo; ctx.fill();
+
+        /* node body */
+        const r = n.r + n.glow * 1.8;
+        ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(n.color, 0.75 + n.glow * 0.25);
+        ctx.fill();
+
+        /* white specular core */
+        ctx.beginPath(); ctx.arc(n.x, n.y, r * 0.38, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${(0.65 + n.glow * 0.35).toFixed(2)})`;
+        ctx.fill();
       }
-      /* packets */
-      for (const e of edges) drawPacket(e);
-      /* blocks */
-      for (const b of blocks) drawBlock(b, fade);
-      /* AI orb */
-      if (inFix) {
-        const a = clamp((cycleT - P_FIX) / 0.04, 0, 1) * clamp((P_ORCH - cycleT) / 0.04, 0, 1);
-        drawAIOrb(aiX, aiY, a * fade);
-      }
-      /* phase labels */
-      drawChaosLabel(cycleT);
-      drawOrchLabel(cycleT);
 
       raf.current = requestAnimationFrame(draw);
     };
 
     resize();
     window.addEventListener("resize", resize);
-    raf.current = requestAnimationFrame(ts => { lastTime = ts; draw(ts); });
+    draw();
     return () => {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(raf.current);
