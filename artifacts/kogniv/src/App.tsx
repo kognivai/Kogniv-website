@@ -9,6 +9,7 @@ import AdvantagesSection from "@/components/AdvantagesSection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import { ConcentricRings, GlowOrb, StarField } from "@/components/DecorativeBg";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   return (
@@ -65,6 +66,7 @@ function App() {
       <AdvantagesSection />
       <ContactSection />
       <Footer />
+      <Analytics />
     </main>
   );
 }
