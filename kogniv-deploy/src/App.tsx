@@ -16,6 +16,7 @@ import { RequestDemoModal } from "@/components/request-demo-modal";
 import { ArrowRight } from "lucide-react";
 import { Nav } from "@/components/nav";
 import { PageFooter } from "@/components/page-footer";
+import { Analytics } from '@vercel/analytics/react';
 
 const queryClient = new QueryClient();
 
@@ -245,6 +246,7 @@ export default function App() {
           <Router />
         </WouterRouter>
         <Toaster />
+        <Analytics />
       </TooltipProvider>
     </QueryClientProvider>
   );
